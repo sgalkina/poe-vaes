@@ -13,6 +13,9 @@ import shutil
 import matplotlib.pyplot as plt
 
 from models.SVAE_three import SVAEThree
+from models.SVAE_three_star import SVAEThreeStar
+from models.VAEVAE_three import VAEVAEThree
+from models.VAEVAE_three_star import VAEVAEThreeStar
 
 from experiments.mnist_split_three.MNIST_split_three_inference import InferenceJointAll, InferenceJoint, \
         InferenceX, GeneratorX, z_dim, MnistResNet
@@ -481,7 +484,10 @@ valid_loader_supervised = torch.utils.data.DataLoader(
 
 
 models_classes = {
-    'SVAE_star': SVAEThree,
+    'SVAEThree': SVAEThree,
+    'VAEVAEThree': VAEVAEThree,
+    'SVAEThreeStar': SVAEThreeStar,
+    'VAEVAEThreeStar': VAEVAEThreeStar,
 }
 print(sys.argv)
 
