@@ -52,7 +52,7 @@ class InferenceJointAll(Normal):
         y = self.features_y(y1)
         y = y.view(y.size(0), -1)
         z = self.features_z(z1)
-        z = z.view(y.size(0), -1)
+        z = z.view(z.size(0), -1)
         x = self.classifier(torch.cat([x, y, z], 1))
         return {"loc": x[:, :n_latents], "scale": F.softplus(x[:, n_latents:])}
 
@@ -134,9 +134,9 @@ class GeneratorX(Bernoulli):
             nn.Linear(512, 112 * 1 * 1),
             nn.ReLU())
         self.hallucinate = nn.Sequential(
-            nn.ConvTranspose2d(112, 56, kernel_size=(3, 5), stride=2),
+            nn.ConvTranspose2d(112, 37, kernel_size=(3, 5), stride=2),
             nn.ReLU(),
-            nn.ConvTranspose2d(56, 28, kernel_size=(3, 5), stride=2),
+            nn.ConvTranspose2d(37, 28, kernel_size=(3, 5), stride=2),
             nn.ReLU(),
         )
         self.upsample = nn.ConvTranspose2d(28, 1, kernel_size=(2, 4), stride=2)
@@ -145,7 +145,7 @@ class GeneratorX(Bernoulli):
         z = self.upsampler(z)
         z = z.view(z.size(0), 112, 1, 1)
         z = self.hallucinate(z)
-        z = self.upsample(z, output_size=[14, 28])
+        z = self.upsample(z, output_size=[9, 28])
         return {"probs": torch.sigmoid(z)}
 
 

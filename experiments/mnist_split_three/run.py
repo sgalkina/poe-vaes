@@ -31,16 +31,16 @@ if torch.cuda.is_available():
 else:
     device = "cpu"
 
-root = 'misc'
+root = '.'
+model_root = '/work1/svegal'
 
 
 def crop_third(img):
     N_or = 28
     N = 27
-    img = transforms.functional.crop(img, 0, 0, N, N_or)
     up = transforms.functional.crop(img, 0, 0, N/3, N_or)
-    middle = transforms.functional.crop(img, N/3, 0, 2*N/3, N_or)
-    down = transforms.functional.crop(img, 2*N/3, 0, N, N_or)
+    middle = transforms.functional.crop(img, N/3, 0, N/3, N_or)
+    down = transforms.functional.crop(img, 2*N/3, 0, N/3, N_or)
     return up, middle, down
 
 
@@ -51,7 +51,7 @@ target_transform = transforms.Lambda(lambd=lambda y: torch.eye(10)[y])
 kwargs = {'batch_size': batch_size, 'num_workers': 1, 'pin_memory': True}
 
 
-def save_checkpoint(model_obj, is_best, model_name, folder=f'{root}/saved_models', filename='checkpoint_{}.pth.tar'):
+def save_checkpoint(model_obj, is_best, model_name, folder=f'{model_root}/saved_models', filename='checkpoint_{}.pth.tar'):
     if not os.path.isdir(folder):
         os.mkdir(folder)
     torch.save(dict(distributions=model_obj.model.distributions.state_dict()), os.path.join(folder, filename.format(model_name)))
@@ -65,7 +65,7 @@ def load_checkpoint(model_obj, model_name, is_best=True):
         filename = 'model_best_{}.pth.tar'
     else:
         filename = 'checkpoint_{}.pth.tar'
-    file_path = os.path.join(f'{root}/saved_models', filename.format(model_name))
+    file_path = os.path.join(f'{model_root}/saved_models', filename.format(model_name))
     if os.path.exists(file_path):
         checkpoint = torch.load(file_path)
         model_obj.model.distributions.load_state_dict(checkpoint['distributions'])
@@ -259,6 +259,7 @@ def run_semisupervised(model_obj, no_labels):
         train_xy_iterator = train_loader_supervised.__iter__()
         train_x_iterator = train_loader_unsupervised_x.__iter__()
         train_y_iterator = train_loader_unsupervised_y.__iter__()
+        train_z_iterator = train_loader_unsupervised_z.__iter__()
         bsize = train_loader_unsupervised_y.batch_size
         dsize = train_loader_unsupervised_y.dataset
         for i in range(len(train_loader_unsupervised_y)):
@@ -311,6 +312,7 @@ def run_semisupervised(model_obj, no_labels):
         test_xy_iterator = test_loader_supervised.__iter__()
         test_x_iterator = test_loader_unsupervised_x.__iter__()
         test_y_iterator = test_loader_unsupervised_y.__iter__()
+        test_z_iterator = test_loader_unsupervised_z.__iter__()
         bsize = test_loader_unsupervised_y.batch_size
         dsize = test_loader_unsupervised_y.dataset
         for i in range(len(test_loader_unsupervised_y)):
@@ -500,7 +502,7 @@ def init_model(model_class):
 
 
 model_obj = init_model(model_class)
-filepath_saved_model = f'{root}/saved_models/mnist_cnn.pt'
+filepath_saved_model = f'{model_root}/saved_models/mnist_cnn.pt'
 
 model_resnet = MnistResNet().to(device)
 model_resnet.load_state_dict(torch.load(filepath_saved_model))
