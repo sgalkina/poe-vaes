@@ -3,6 +3,8 @@ The source code for "Multimodal Variational Autoencoders for Semi-Supervised Lea
 
 The `misc` folder contains precomputed vectorized representations for  CUB-captions dataset and pretrained oracle networks for MNIST and SVHN. 
 
+The `mmvae_mnist_split` folder contains the source code for MMVAE with the MNIST-Split experiment implementation.
+
 The data for CUB-Captions can be downloaded from <http://www.robots.ox.ac.uk/~yshi/mmdgm/datasets/cub.zip>
 
 There are four PoE models available for training:
