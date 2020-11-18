@@ -38,42 +38,42 @@ class VAEVAEThreeStar(object):
         self.q = q_triple().to(device)
 
         self.q_xy = q_double().to(device)
-        self.q_yz = q_double().replace_var(x1=y1, y1=z1).to(device)
-        self.q_xz = q_double().replace_var(x1=z1, y1=x1).to(device)
+        self.q_yz = q_double().replace_var(x1='y1', y1='z1').to(device)
+        self.q_xz = q_double().replace_var(x1='z1', y1='x1').to(device)
 
-        self.px_u = unsupervised_distr_no_var(self.px).to_device()
-        self.py_u = unsupervised_distr_no_var(self.py).to_device()
-        self.pz_u = unsupervised_distr_no_var(self.pz).to_device()
+        self.px_u = unsupervised_distr_no_var(self.px).to(device)
+        self.py_u = unsupervised_distr_no_var(self.py).to(device)
+        self.pz_u = unsupervised_distr_no_var(self.pz).to(device)
 
-        self.q1_u = unsupervised_distr_no_var(self.q1).to_device()
-        self.q2_u = unsupervised_distr_no_var(self.q2).to_device()
-        self.q3_u = unsupervised_distr_no_var(self.q3).to_device()
+        self.q1_u = unsupervised_distr_no_var(self.q1).to(device)
+        self.q2_u = unsupervised_distr_no_var(self.q2).to(device)
+        self.q3_u = unsupervised_distr_no_var(self.q3).to(device)
 
         loss_supervised_recon = -(
                 self.px.log_prob().expectation(self.q) +
                 self.py.log_prob().expectation(self.q) +
                 self.pz.log_prob().expectation(self.q) +
 
-                self.px.log_prob().expectation(self.q_xy1) +
-                self.px.log_prob().expectation(self.q_xy2) +
-                self.py.log_prob().expectation(self.q_xy1) +
-                self.py.log_prob().expectation(self.q_xy2) +
-                self.pz.log_prob().expectation(self.q_xy1) +
-                self.pz.log_prob().expectation(self.q_xy2) +
+                self.px.log_prob().expectation(self.q_xy) +
+                self.px.log_prob().expectation(self.q_xy) +
+                self.py.log_prob().expectation(self.q_xy) +
+                self.py.log_prob().expectation(self.q_xy) +
+                self.pz.log_prob().expectation(self.q_xy) +
+                self.pz.log_prob().expectation(self.q_xy) +
 
-                self.px.log_prob().expectation(self.q_yz2) +
-                self.px.log_prob().expectation(self.q_yz3) +
-                self.py.log_prob().expectation(self.q_yz2) +
-                self.py.log_prob().expectation(self.q_yz3) +
-                self.pz.log_prob().expectation(self.q_yz2) +
-                self.pz.log_prob().expectation(self.q_yz3) +
+                self.px.log_prob().expectation(self.q_yz) +
+                self.px.log_prob().expectation(self.q_yz) +
+                self.py.log_prob().expectation(self.q_yz) +
+                self.py.log_prob().expectation(self.q_yz) +
+                self.pz.log_prob().expectation(self.q_yz) +
+                self.pz.log_prob().expectation(self.q_yz) +
 
-                self.px.log_prob().expectation(self.q_xz1) +
-                self.px.log_prob().expectation(self.q_xz3) +
-                self.py.log_prob().expectation(self.q_xz1) +
-                self.py.log_prob().expectation(self.q_xz3) +
-                self.pz.log_prob().expectation(self.q_xz1) +
-                self.pz.log_prob().expectation(self.q_xz3) +
+                self.px.log_prob().expectation(self.q_xz) +
+                self.px.log_prob().expectation(self.q_xz) +
+                self.py.log_prob().expectation(self.q_xz) +
+                self.py.log_prob().expectation(self.q_xz) +
+                self.pz.log_prob().expectation(self.q_xz) +
+                self.pz.log_prob().expectation(self.q_xz) +
 
                 self.px.log_prob().expectation(self.q1) +
                 self.py.log_prob().expectation(self.q2) +
@@ -81,42 +81,38 @@ class VAEVAEThreeStar(object):
         )
 
         loss_supervised_kl = self.beta*(
-                KullbackLeibler(self.q, self.q_xy1) +
-                KullbackLeibler(self.q, self.q_xy2) +
+                KullbackLeibler(self.q, self.q_xy) +
+                KullbackLeibler(self.q, self.q_xy) +
 
-                KullbackLeibler(self.q, self.q_yz2) +
-                KullbackLeibler(self.q, self.q_yz3) +
+                KullbackLeibler(self.q, self.q_yz) +
+                KullbackLeibler(self.q, self.q_yz) +
 
-                KullbackLeibler(self.q, self.q_xz1) +
-                KullbackLeibler(self.q, self.q_xz3) +
+                KullbackLeibler(self.q, self.q_xz) +
+                KullbackLeibler(self.q, self.q_xz) +
 
-                KullbackLeibler(self.q_xy1, self.prior) +
-                KullbackLeibler(self.q_xy2, self.prior) +
+                KullbackLeibler(self.q_xy, self.prior) +
+                KullbackLeibler(self.q_xy, self.prior) +
 
-                KullbackLeibler(self.q_yz2, self.prior) +
-                KullbackLeibler(self.q_yz3, self.prior) +
+                KullbackLeibler(self.q_yz, self.prior) +
+                KullbackLeibler(self.q_yz, self.prior) +
 
-                KullbackLeibler(self.q_xz1, self.prior) +
-                KullbackLeibler(self.q_xz3, self.prior) +
+                KullbackLeibler(self.q_xz, self.prior) +
+                KullbackLeibler(self.q_xz, self.prior) +
 
-                KullbackLeibler(self.q1, self.q_xy1) +
-                KullbackLeibler(self.q2, self.q_xy1) +
-                KullbackLeibler(self.q1, self.q_xy2) +
-                KullbackLeibler(self.q2, self.q_xy2) +
+                KullbackLeibler(self.q1, self.q_xy) +
+                KullbackLeibler(self.q2, self.q_xy) +
+                KullbackLeibler(self.q1, self.q_xy) +
+                KullbackLeibler(self.q2, self.q_xy) +
 
-                KullbackLeibler(self.q2, self.q_yz2) +
-                KullbackLeibler(self.q3, self.q_yz2) +
-                KullbackLeibler(self.q2, self.q_yz3) +
-                KullbackLeibler(self.q3, self.q_yz3) +
+                KullbackLeibler(self.q2, self.q_yz) +
+                KullbackLeibler(self.q3, self.q_yz) +
+                KullbackLeibler(self.q2, self.q_yz) +
+                KullbackLeibler(self.q3, self.q_yz) +
 
-                KullbackLeibler(self.q1, self.q_xz1) +
-                KullbackLeibler(self.q2, self.q_xz1) +
-                KullbackLeibler(self.q1, self.q_xz3) +
-                KullbackLeibler(self.q3, self.q_xz3) +
-
-                KullbackLeibler(self.q1, self.prior) +
-                KullbackLeibler(self.q2, self.prior) +
-                KullbackLeibler(self.q3, self.prior)
+                KullbackLeibler(self.q1, self.q_xz) +
+                KullbackLeibler(self.q2, self.q_xz) +
+                KullbackLeibler(self.q1, self.q_xz) +
+                KullbackLeibler(self.q3, self.q_xz)
         )
 
         loss_unsupervised_recon = -(
@@ -140,17 +136,15 @@ class VAEVAEThreeStar(object):
                 self.py,
                 self.pz,
 
-                self.q11,
-                self.q12,
-                self.q13,
+                self.q1,
+                self.q2,
+                self.q3,
 
-                self.q21,
-                self.q22,
-                self.q23,
+                self.q,
 
-                self.q31,
-                self.q32,
-                self.q33,
+                self.q_xy,
+                self.q_yz,
+                self.q_xz,
             ],
             optimizer=optim.Adam,
             optimizer_params=optimizer_params
@@ -211,17 +205,15 @@ class VAEVAEThreeStar(object):
                 self.py,
                 self.pz,
 
-                self.q11,
-                self.q12,
-                self.q13,
+                self.q1,
+                self.q2,
+                self.q3,
 
-                self.q21,
-                self.q22,
-                self.q23,
+                self.q,
 
-                self.q31,
-                self.q32,
-                self.q33,
+                self.q_xy,
+                self.q_yz,
+                self.q_xz,
             ]:
             result += sum(p.numel() for p in m.parameters() if p.requires_grad)
         return result

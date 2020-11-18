@@ -22,17 +22,17 @@ class SVAEThreeStar(object):
         self.prior = Normal(loc=torch.tensor(0.), scale=torch.tensor(1.),
                        var=["z"], features_shape=[z_dim], name="p_{prior}").to(device)
 
-        self.q11 = q().to(device)
-        self.q12 = q().to(device)
-        self.q13 = q().to(device)
+        self.q11 = q().replace_var(x1='x1').to(device)
+        self.q12 = q().replace_var(x1='x2').to(device)
+        self.q13 = q().replace_var(x1='x3').to(device)
 
         self.q21 = q().replace_var(x1='y1').to(device)
-        self.q22 = q().replace_var(x1='y1').to(device)
-        self.q23 = q().replace_var(x1='y1').to(device)
+        self.q22 = q().replace_var(x1='y2').to(device)
+        self.q23 = q().replace_var(x1='y3').to(device)
 
         self.q31 = q().replace_var(x1='z1').to(device)
-        self.q32 = q().replace_var(x1='z1').to(device)
-        self.q33 = q().replace_var(x1='z1').to(device)
+        self.q32 = q().replace_var(x1='z2').to(device)
+        self.q33 = q().replace_var(x1='z3').to(device)
 
         self.q1 = ProductOfNormal([self.q11, self.q12, self.q13], name="q1").to(device)
         self.q2 = ProductOfNormal([self.q21, self.q22, self.q23], name="q1").to(device)
@@ -55,16 +55,16 @@ class SVAEThreeStar(object):
         self.q_yz2 = ProductOfNormal([self.q21, self.q22, self.q33], name="q_yz2").to(device)
         self.q_yz3 = ProductOfNormal([self.q31, self.q22, self.q33], name="q_yz3").to(device)
 
-        self.q_xz1 = ProductOfNormal([self.q1, self.q12, self.q33], name="q_xz1").to(device)
-        self.q_xz3 = ProductOfNormal([self.q1, self.q32, self.q33], name="q_xz3").to(device)
+        self.q_xz1 = ProductOfNormal([self.q11, self.q12, self.q33], name="q_xz1").to(device)
+        self.q_xz3 = ProductOfNormal([self.q11, self.q32, self.q33], name="q_xz3").to(device)
 
-        self.px_u = unsupervised_distr_no_var(self.px).to_device()
-        self.py_u = unsupervised_distr_no_var(self.py).to_device()
-        self.pz_u = unsupervised_distr_no_var(self.pz).to_device()
+        self.px_u = unsupervised_distr_no_var(self.px).to(device)
+        self.py_u = unsupervised_distr_no_var(self.py).to(device)
+        self.pz_u = unsupervised_distr_no_var(self.pz).to(device)
 
-        self.q1_u = unsupervised_distr_no_var(self.q1).to_device()
-        self.q2_u = unsupervised_distr_no_var(self.q2).to_device()
-        self.q3_u = unsupervised_distr_no_var(self.q3).to_device()
+        self.q1_u = unsupervised_distr_no_var(self.q1).to(device)
+        self.q2_u = unsupervised_distr_no_var(self.q2).to(device)
+        self.q3_u = unsupervised_distr_no_var(self.q3).to(device)
 
         loss_supervised_recon = -(
                 self.px.log_prob().expectation(self.q) +
@@ -168,36 +168,52 @@ class SVAEThreeStar(object):
     def model_args(self, x, y, z, xu, yu, zu, beta=1.0):
         return {
             "x1": x, "y1": y, "z1": z,
+            "x2": x, "y2": y, "z2": z,
+            "x3": x, "y3": y, "z3": z,
             "x1_u": xu, "y1_u": yu, "z1_u": zu,
+            "x2_u": xu, "y2_u": yu, "z2_u": zu,
+            "x3_u": xu, "y3_u": yu, "z3_u": zu,
             "beta": beta,
         }
 
     def eval_args(self, x, y, z):
         return {
             "x1": x, "y1": y, "z1": z,
+            "x2": x, "y2": y, "z2": z,
+            "x3": x, "y3": y, "z3": z,
             "x1_u": x, "y1_u": y, "z1_u": z,
+            "x2_u": x, "y2_u": y, "z2_u": z,
+            "x3_u": x, "y3_u": y, "z3_u": z,
             "beta": 1.0,
         }
 
     def sample_z_from_x(self, x, sample_shape=None):
+        varrs = {"x1": x, "x2": x, "x3": x}
         if sample_shape:
-            return self.q1.sample({"x1": x}, sample_shape=[sample_shape], return_all=False)
-        return self.q1.sample({"x1": x}, return_all=False)
+            return self.q1.sample(varrs, sample_shape=[sample_shape], return_all=False)
+        return self.q1.sample(varrs, return_all=False)
 
     def sample_z_from_y(self, y, sample_shape=None):
+        varrs = {"y1": y, "y2": y, "y3": y}
         if sample_shape:
-            return self.q2.sample({"y1": y}, sample_shape=[sample_shape], return_all=False)
-        return self.q2.sample({"y1": y}, return_all=False)
+            return self.q2.sample(varrs, sample_shape=[sample_shape], return_all=False)
+        return self.q2.sample(varrs, return_all=False)
 
     def sample_z_from_z(self, z, sample_shape=None):
+        varrs = {"z1": z, "z2": z, "z3": z}
         if sample_shape:
-            return self.q3.sample({"z1": z}, sample_shape=[sample_shape], return_all=False)
-        return self.q3.sample({"z1": z}, return_all=False)
+            return self.q3.sample(varrs, sample_shape=[sample_shape], return_all=False)
+        return self.q3.sample(varrs, return_all=False)
 
     def sample_z_all(self, x, y, z, sample_shape=None):
+        varrs = {
+            "x1": x, "y1": y, "z1": z,
+            "x2": x, "y2": y, "z2": z,
+            "x3": x, "y3": y, "z3": z,
+        }
         if sample_shape:
-            return self.q.sample({"x1": x, "y1": y, "z1": z}, sample_shape=[sample_shape], return_all=False)
-        return self.q.sample({"x1": x, "y1": y, "z1": z}, return_all=False)
+            return self.q.sample(varrs, sample_shape=[sample_shape], return_all=False)
+        return self.q.sample(varrs, return_all=False)
 
     def reconstruct_x(self, z):
         return self.px.sample_mean(z)
