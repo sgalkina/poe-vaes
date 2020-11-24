@@ -140,7 +140,7 @@ class SVAEThreeStar(object):
                 KullbackLeibler(self.q3_u, self.prior)
         )
 
-        loss = loss_supervised_recon + loss_supervised_kl + loss_unsupervised_recon + loss_unsupervised_kl
+        loss = loss_supervised_recon.mean() + loss_supervised_kl.mean() + loss_unsupervised_recon.mean() + loss_unsupervised_kl.mean()
 
         self.model = Model(
             loss=loss,

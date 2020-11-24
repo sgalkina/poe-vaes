@@ -46,8 +46,8 @@ class VAEVAEThree(object):
         self.pz_u = unsupervised_distr_no_var(self.pz).to(device)
 
         self.q1_u = unsupervised_distr_no_var(self.q1).to(device)
-        self.q2_u = unsupervised_distr_no_var(self.q2).to(device)
-        self.q3_u = unsupervised_distr_no_var(self.q3).to(device)
+        self.q2_u = q().replace_var(x1='y1_u').to(device)
+        self.q3_u = q().replace_var(x1='z1_u').to(device)
 
         loss_supervised_recon = -(
                 self.px.log_prob().expectation(self.q) +
@@ -55,60 +55,35 @@ class VAEVAEThree(object):
                 self.pz.log_prob().expectation(self.q) +
 
                 self.px.log_prob().expectation(self.q_xy) +
-                self.px.log_prob().expectation(self.q_xy) +
                 self.py.log_prob().expectation(self.q_xy) +
-                self.py.log_prob().expectation(self.q_xy) +
-                self.pz.log_prob().expectation(self.q_xy) +
                 self.pz.log_prob().expectation(self.q_xy) +
 
                 self.px.log_prob().expectation(self.q_yz) +
-                self.px.log_prob().expectation(self.q_yz) +
                 self.py.log_prob().expectation(self.q_yz) +
-                self.py.log_prob().expectation(self.q_yz) +
-                self.pz.log_prob().expectation(self.q_yz) +
                 self.pz.log_prob().expectation(self.q_yz) +
 
                 self.px.log_prob().expectation(self.q_xz) +
-                self.px.log_prob().expectation(self.q_xz) +
                 self.py.log_prob().expectation(self.q_xz) +
-                self.py.log_prob().expectation(self.q_xz) +
-                self.pz.log_prob().expectation(self.q_xz) +
                 self.pz.log_prob().expectation(self.q_xz)
         )
 
         loss_supervised_kl = self.beta*(
                 KullbackLeibler(self.q, self.q_xy) +
-                KullbackLeibler(self.q, self.q_xy) +
-
                 KullbackLeibler(self.q, self.q_yz) +
-                KullbackLeibler(self.q, self.q_yz) +
-
-                KullbackLeibler(self.q, self.q_xz) +
                 KullbackLeibler(self.q, self.q_xz) +
 
                 KullbackLeibler(self.q_xy, self.prior) +
-                KullbackLeibler(self.q_xy, self.prior) +
-
                 KullbackLeibler(self.q_yz, self.prior) +
-                KullbackLeibler(self.q_yz, self.prior) +
-
-                KullbackLeibler(self.q_xz, self.prior) +
                 KullbackLeibler(self.q_xz, self.prior) +
 
-                KullbackLeibler(self.q1, self.q_xy) +
-                KullbackLeibler(self.q2, self.q_xy) +
-                KullbackLeibler(self.q1, self.q_xy) +
-                KullbackLeibler(self.q2, self.q_xy) +
+                KullbackLeibler(self.q_xy, self.q1) +
+                KullbackLeibler(self.q_xy, self.q2) +
 
-                KullbackLeibler(self.q2, self.q_yz) +
-                KullbackLeibler(self.q3, self.q_yz) +
-                KullbackLeibler(self.q2, self.q_yz) +
-                KullbackLeibler(self.q3, self.q_yz) +
+                KullbackLeibler(self.q_yz, self.q2) +
+                KullbackLeibler(self.q_yz, self.q3) +
 
-                KullbackLeibler(self.q1, self.q_xz) +
-                KullbackLeibler(self.q2, self.q_xz) +
-                KullbackLeibler(self.q1, self.q_xz) +
-                KullbackLeibler(self.q3, self.q_xz)
+                KullbackLeibler(self.q_xz, self.q1) +
+                KullbackLeibler(self.q_xz, self.q3)
         )
 
         loss_unsupervised_recon = -(
@@ -123,7 +98,7 @@ class VAEVAEThree(object):
                 KullbackLeibler(self.q3_u, self.prior)
         )
 
-        loss = loss_supervised_recon + loss_supervised_kl + loss_unsupervised_recon + loss_unsupervised_kl
+        loss = loss_supervised_recon.mean() + loss_supervised_kl.mean() + loss_unsupervised_recon.mean() + loss_unsupervised_kl.mean()
 
         self.model = Model(
             loss=loss,

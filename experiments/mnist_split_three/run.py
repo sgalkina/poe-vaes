@@ -22,7 +22,7 @@ from experiments.mnist_split_three.MNIST_split_three_inference import InferenceJ
 
 
 batch_size = 100
-epochs = 200
+epochs = 50
 annealing_epochs = 0
 best_loss = 0
 
@@ -31,8 +31,8 @@ if torch.cuda.is_available():
 else:
     device = "cpu"
 
-root = '.'
-model_root = '/work1/svegal'
+root = 'misc'
+model_root = 'misc'
 
 
 def crop_third(img):
@@ -152,7 +152,7 @@ def evaluate(model_obj, data_loader, n_no_labels, name='latent_space'):
             recon_down_middle = model_obj.reconstruct_y(z_down).detach().to("cpu").numpy()
             recon_down_down = model_obj.reconstruct_z(z_down).detach().to("cpu").numpy()
 
-            z_full = model_obj.sample_z_all(up.unsqueeze(0), down.unsqueeze(0), sample_shape=10)
+            z_full = model_obj.sample_z_all(up.unsqueeze(0), middle.unsqueeze(0), down.unsqueeze(0), sample_shape=10)
             recon_full_up = model_obj.reconstruct_x(z_full).detach().to("cpu").numpy()
             recon_full_middle = model_obj.reconstruct_y(z_full).detach().to("cpu").numpy()
             recon_full_down = model_obj.reconstruct_z(z_full).detach().to("cpu").numpy()
@@ -174,7 +174,7 @@ def evaluate(model_obj, data_loader, n_no_labels, name='latent_space'):
                 recon_full_middle[0][0],
                 recon_full_down[0][0],
             ))
-    image_name = f'{root}/results/{keyword}_{model_obj.name}_{n_no_labels}_{name}.png'
+    image_name = f'{keyword}_{model_obj.name}_{n_no_labels}_{name}.png'
     generate_images(labels, image_name)
 
 
@@ -185,7 +185,7 @@ def evaluate_accuracy(model_obj, data_loader):
         up_all, middle_all, down_all = x[0].to(device), x[1].to(device), x[2].to(device)
         y = y.to(device)
 
-        line = torch.zeros(up_all.size(0), 1, 28) # size correction
+        line = torch.zeros(up_all.size(0), 1, 1, 28).to(device) # size correction
 
         z_up = model_obj.sample_z_from_x(up_all)
         im_top = model_obj.reconstruct_x(z_up)
@@ -195,8 +195,8 @@ def evaluate_accuracy(model_obj, data_loader):
 
         z_middle = model_obj.sample_z_from_y(middle_all)
         recon_middle_up = model_obj.reconstruct_x(z_middle)
-        recon_middle_middle = model_obj.reconstruct_x(z_middle)
-        recon_middle_down = model_obj.reconstruct_y(z_middle)
+        recon_middle_middle = model_obj.reconstruct_y(z_middle)
+        recon_middle_down = model_obj.reconstruct_z(z_middle)
         recon_middle = torch.cat((recon_middle_up, recon_middle_middle, recon_middle_down, line), 2)
 
         z_down = model_obj.sample_z_from_z(down_all)
@@ -207,8 +207,8 @@ def evaluate_accuracy(model_obj, data_loader):
 
         z_full = model_obj.sample_z_all(up_all, middle_all, down_all)
         recon_full_up = model_obj.reconstruct_x(z_full)
-        recon_full_middle = model_obj.reconstruct_x(z_full)
-        recon_full_down = model_obj.reconstruct_y(z_full)
+        recon_full_middle = model_obj.reconstruct_y(z_full)
+        recon_full_down = model_obj.reconstruct_z(z_full)
         recon_full = torch.cat((recon_full_up, recon_full_middle, recon_full_down, line), 2)
 
         target = y.argmax(dim=1)
@@ -234,6 +234,59 @@ def evaluate_accuracy(model_obj, data_loader):
         return 100. * correct / total
 
     return accuracy(correct_full), accuracy(correct_up), accuracy(correct_middle), accuracy(correct_down)
+
+
+def save_full_image(recon, folder_name, im_idx):
+    fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(3, 3))
+    ax.imshow(recon.reshape((28, 28)))
+    ax.set_xticks([], [])
+    ax.set_yticks([], [])
+    image_name = f'{root}/{folder_name}/image{im_idx}.png'
+    plt.savefig(image_name)
+
+
+def images_for_FID(model_obj, data_loader):
+    total = 0
+    for x, y in data_loader:
+        up_all, middle_all, down_all, original_all = x[0].to(device), x[1].to(device), x[2].to(device), x[3].to(device).detach().to("cpu").numpy()
+
+        line = torch.zeros(up_all.size(0), 1, 1, 28).to(device) # size correction
+
+        z_up = model_obj.sample_z_from_x(up_all)
+        im_top = model_obj.reconstruct_x(z_up)
+        im_middle = model_obj.reconstruct_y(z_up)
+        im_bottom = model_obj.reconstruct_z(z_up)
+        recon_up = torch.cat((im_top, im_middle, im_bottom, line), 2).detach().to("cpu").numpy()
+
+        z_middle = model_obj.sample_z_from_y(middle_all)
+        recon_middle_up = model_obj.reconstruct_x(z_middle)
+        recon_middle_middle = model_obj.reconstruct_y(z_middle)
+        recon_middle_down = model_obj.reconstruct_z(z_middle)
+        recon_middle = torch.cat((recon_middle_up, recon_middle_middle, recon_middle_down, line), 2).detach().to("cpu").numpy()
+
+        z_down = model_obj.sample_z_from_z(down_all)
+        recon_down_up = model_obj.reconstruct_x(z_down)
+        recon_down_middle = model_obj.reconstruct_y(z_down)
+        recon_down_down = model_obj.reconstruct_z(z_down)
+        recon_down = torch.cat((recon_down_up, recon_down_middle, recon_down_down, line), 2).detach().to("cpu").numpy()
+
+        z_full = model_obj.sample_z_all(up_all, middle_all, down_all)
+        recon_full_up = model_obj.reconstruct_x(z_full)
+        recon_full_middle = model_obj.reconstruct_y(z_full)
+        recon_full_down = model_obj.reconstruct_z(z_full)
+        recon_full = torch.cat((recon_full_up, recon_full_middle, recon_full_down, line), 2).detach().to("cpu").numpy()
+
+        N = recon_full.shape[0]
+        for i in range(N):
+            total += 1
+            save_full_image(original_all[i], 'mnist_split_three/original', total)
+            save_full_image(recon_up[i], 'mnist_split_three/up', total)
+            save_full_image(recon_middle[i], 'mnist_split_three/middle', total)
+            save_full_image(recon_down[i], 'mnist_split_three/down', total)
+            save_full_image(recon_full[i], 'mnist_split_three/full', total)
+
+        if total >= 1000:
+            return
 
 
 def get_beta(epoch, i):
@@ -354,7 +407,6 @@ def run_semisupervised(model_obj, no_labels):
                 x_down_split,
             ))
             test_loss += float(loss)
-            result.extend([0] * x_up.shape[0])
         epoch_loss = test_loss * bsize / len(dsize)
         return epoch_loss
 
@@ -413,7 +465,7 @@ def run_semisupervised(model_obj, no_labels):
     result.to_csv(f'{root}/results/{model_obj.name}_{len(no_labels)}_{keyword}.csv')
 
 
-keyword = 'mnist_split_three'
+keyword = 'mnist_split_three2'
 
 
 def get_samplers(N_data, no_labels_share, index_start=0):
@@ -505,7 +557,7 @@ model_obj = init_model(model_class)
 filepath_saved_model = f'{model_root}/saved_models/mnist_cnn.pt'
 
 model_resnet = MnistResNet().to(device)
-model_resnet.load_state_dict(torch.load(filepath_saved_model))
+model_resnet.load_state_dict(torch.load(filepath_saved_model, map_location=torch.device('cpu')))
 no_labels_indices = set(np.random.choice(N, size=int(no_labels_share * N), replace=False))
 if len(sys.argv) > 3 and sys.argv[3] == 'eval':
     is_best = not (len(sys.argv) > 4 and sys.argv[4] == 'current')
@@ -513,6 +565,8 @@ if len(sys.argv) > 3 and sys.argv[3] == 'eval':
     load_checkpoint(model_obj, name, is_best=is_best)
     generate_1000_sampled_images(model_obj, keyword, len(no_labels_indices))
     evaluate(model_obj, test_loader_supervised, len(no_labels_indices), name=sys.argv[4])
+    print('accuracies ', evaluate_accuracy(model_obj, test_loader_supervised))
+    images_for_FID(model_obj, valid_loader_supervised)
 else:
     name = '{}_{}_{}'.format(model_obj.name, len(no_labels_indices), keyword)
     load_checkpoint(model_obj, name, is_best=False)

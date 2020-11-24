@@ -134,9 +134,9 @@ class GeneratorX(Bernoulli):
             nn.Linear(512, 112 * 1 * 1),
             nn.ReLU())
         self.hallucinate = nn.Sequential(
-            nn.ConvTranspose2d(112, 37, kernel_size=(3, 5), stride=2),
+            nn.ConvTranspose2d(112, 56, kernel_size=(2, 5), stride=2),
             nn.ReLU(),
-            nn.ConvTranspose2d(37, 28, kernel_size=(3, 5), stride=2),
+            nn.ConvTranspose2d(56, 28, kernel_size=(2, 5), stride=2),
             nn.ReLU(),
         )
         self.upsample = nn.ConvTranspose2d(28, 1, kernel_size=(2, 4), stride=2)
